@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.test
+
+# Database
+data/
+*.db
+*.sqlite
+
+# Logs
+*.log
+logs/*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+coverage/
+test-results/
+playwright-report/
+
+# Temporary
+tmp/
+temp/
+*.tmp
+
+# Local settings (keep template)
+.claude/settings.local.json
+.claude/config.sh

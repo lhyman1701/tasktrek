@@ -1,0 +1,63 @@
+#!/bin/bash
+# TaskTrek Project Configuration
+# Copy this file to config.sh and customize for your project
+
+# =============================================================================
+# PROJECT IDENTIFICATION
+# =============================================================================
+
+export PROJECT_NAME="{{PROJECT_NAME}}"
+export PROJECT_PATH="{{PROJECT_PATH}}"
+
+# =============================================================================
+# TEST COMMANDS
+# =============================================================================
+
+# Unit/integration test command
+export TEST_COMMAND="npm test"
+
+# E2E test command
+export E2E_COMMAND="npm run test:e2e"
+
+# Single test command (for isolation runs)
+export TEST_SINGLE_COMMAND="npm test --"
+
+# =============================================================================
+# CODE QUALITY COMMANDS
+# =============================================================================
+
+# Lint command
+export LINT_COMMAND="npm run lint"
+
+# Type check command
+export TYPECHECK_COMMAND="npm run typecheck"
+
+# =============================================================================
+# DEPLOYMENT CONFIGURATION (Optional)
+# =============================================================================
+
+# Deployment command (e.g., "git push heroku main", "vercel --prod", "npm run deploy")
+export DEPLOY_COMMAND=""
+
+# Target URL for health checks after deployment
+export DEPLOY_URL=""
+
+# Health check endpoint
+export HEALTH_ENDPOINT="/api/health"
+
+# =============================================================================
+# TEST DIRECTORIES
+# =============================================================================
+
+# E2E test directory
+export E2E_DIR="e2e"
+
+# Unit test directory
+export TEST_DIR="tests"
+
+# =============================================================================
+# CUSTOM STATUS COMMAND (Optional)
+# =============================================================================
+
+# Custom command to run for deployment status (leave empty if not needed)
+export STATUS_COMMAND=""

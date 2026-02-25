@@ -1,0 +1,20 @@
+{
+  "version": "1.0.0",
+  "project": "{{PROJECT_NAME}}",
+  "description": "Wave-based task management configuration",
+  "total_waves": 0,
+  "waves": {},
+  "current_state": {
+    "active_wave": null,
+    "ready_waves": [],
+    "in_progress_waves": [],
+    "completed_waves": [],
+    "blocked_waves": []
+  },
+  "defaults": {
+    "task_prefix": "TASK",
+    "wave_prefix": "WAVE",
+    "progress_dir": "progress",
+    "tasks_dir": "tasks"
+  }
+}

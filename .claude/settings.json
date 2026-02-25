@@ -1,0 +1,151 @@
+{
+  "name": "tasktrek",
+  "description": "Claude Code project configuration with quality enforcement",
+  "mcpServers": {
+    "session-audit": {
+      "command": "node",
+      "args": [
+        "mcp-servers/session-audit/dist/index.js"
+      ]
+    }
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/session-start.sh 2>/dev/null || echo 'Session started. Read SESSION_START.md for context.'"
+          }
+        ]
+      },
+      {
+        "matcher": "resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '=== RESUMING SESSION ===' && head -10 SESSION_START.md 2>/dev/null | grep -E '(Updated|Sprint|Status|Wave)' || echo 'No session context'"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/session-start-testing.sh 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-edit-check.sh 2>/dev/null || echo '⚠️ PRE-EDIT: Have you created a plan? Do you have a failing test?'"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/test-failure-classifier.sh 2>/dev/null || true",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-commit-test-gate.sh 2>/dev/null || true",
+            "timeout": 300
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-edit-verify.sh 2>/dev/null || echo '✓ File edited. Run tests to verify.'"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/regression-detector.sh 2>/dev/null || true",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/on-stop.sh 2>/dev/null || true"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/stop-gate-testing.sh 2>/dev/null || true",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'PRESERVE ACROSS COMPACTION: (1) Test credentials in .env.test — check FIRST for auth issues. (2) Failure tracker: test-failures.json. (3) Baseline: test-baseline.json. (4) Tools: database MCP, Playwright, Bash — use ALL before asking human. (5) Classify failures as A/B/C BEFORE fixing.'"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Edit(**)",
+      "Write(**)",
+      "Bash(npm run *)",
+      "Bash(npx *)",
+      "Bash(pytest *)",
+      "Bash(git *)",
+      "Bash(docker *)",
+      "Bash(npx jest*)",
+      "Bash(npm test*)",
+      "Bash(npx playwright*)",
+      "Bash(python -m pytest*)",
+      "Bash(cat test-failures.json*)",
+      "Bash(cat test-baseline.json*)",
+      "Bash(jq * test-failures.json*)",
+      "Bash(jq * test-baseline.json*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(* --no-verify)",
+      "Edit(.env)"
+    ]
+  },
+  "env": {
+    "NODE_ENV": "test"
+  }
+}
