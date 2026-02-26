@@ -1,4 +1,4 @@
-# {{PROJECT_NAME}} - Complete Project Context
+# TaskFlow - Complete Project Context
 
 This file provides comprehensive context for Claude Code sessions. Read this to understand the full project scope.
 
@@ -6,9 +6,9 @@ This file provides comprehensive context for Claude Code sessions. Read this to 
 
 ## 1. Project Overview
 
-**{{PROJECT_NAME}}** is {{PROJECT_DESCRIPTION}}.
+**TaskFlow** is an AI-powered personal task manager with natural language capabilities, REST API, web app, and iOS app.
 
-**Tech Stack:** {{TECH_STACK}}
+**Tech Stack:** TypeScript, Express, Prisma, PostgreSQL, React 19, Vite, TailwindCSS, TanStack Router/Query, React Native, Expo, AWS CDK
 
 ---
 
@@ -16,18 +16,23 @@ This file provides comprehensive context for Claude Code sessions. Read this to 
 
 | Layer | Technology | Purpose |
 |-------|------------|---------|
-| **Backend** | {{BACKEND_TECH}} | API layer |
-| **Frontend** | {{FRONTEND_TECH}} | User interface |
-| **Database** | {{DATABASE_TECH}} | Data storage |
-| **Testing** | {{TEST_TECH}} | Quality assurance |
+| **Backend** | Node.js 20 + Express + TypeScript + Prisma | API layer |
+| **Frontend** | React 19 + Vite + TailwindCSS | User interface |
+| **Database** | PostgreSQL 16 (AWS RDS) | Data storage |
+| **Testing** | Jest + Playwright | Quality assurance |
 
 ---
 
 ## 3. Directory Structure
 
 ```
-{{PROJECT_NAME}}/
-├── src/                    # Source code
+TaskFlow/
+├── packages/
+│   ├── api/                # Express backend API
+│   ├── web/                # React web application
+│   ├── mobile/             # React Native iOS app
+│   └── shared/             # Shared types, schemas, utilities
+├── infra/                  # AWS CDK infrastructure
 ├── tests/                  # Test files
 ├── docs/                   # Documentation
 ├── tasks/                  # Task specifications
@@ -74,14 +79,14 @@ This file provides comprehensive context for Claude Code sessions. Read this to 
 
 ```bash
 # Testing
-{{TEST_COMMAND}}
-{{E2E_COMMAND}}
+npm test
+npm run test:e2e
 
 # Linting
-{{LINT_COMMAND}}
+npm run lint
 
 # Type checking
-{{TYPECHECK_COMMAND}}
+npm run typecheck
 ```
 
 ---
@@ -105,4 +110,4 @@ All work follows the wave system:
 
 ---
 
-**Last Updated**: {{DATE}}
+**Last Updated**: 2026-02-25

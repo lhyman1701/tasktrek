@@ -1,0 +1,21 @@
+{
+  "version": "50.0.0",
+  "files": {
+    "24e198e2efa82e56dd6d0c4966172b73b58ccbe1350d750814357bf43faa09ab": {
+      "displayName": "TaskFlow-Database-dev Template",
+      "source": {
+        "path": "TaskFlow-Database-dev.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "635165708055-us-east-1-2b46901d": {
+          "bucketName": "cdk-hnb659fds-assets-635165708055-us-east-1",
+          "objectKey": "24e198e2efa82e56dd6d0c4966172b73b58ccbe1350d750814357bf43faa09ab.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::635165708055:role/cdk-hnb659fds-file-publishing-role-635165708055-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

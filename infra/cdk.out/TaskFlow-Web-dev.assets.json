@@ -1,0 +1,36 @@
+{
+  "version": "50.0.0",
+  "files": {
+    "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6": {
+      "displayName": "TaskFlow-Web-dev/Custom::S3AutoDeleteObjectsCustomResourceProvider Code",
+      "source": {
+        "path": "asset.faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "635165708055-us-east-1-13132852": {
+          "bucketName": "cdk-hnb659fds-assets-635165708055-us-east-1",
+          "objectKey": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::635165708055:role/cdk-hnb659fds-file-publishing-role-635165708055-us-east-1"
+        }
+      }
+    },
+    "99363806c73f5e089460b98bc9e1108f2038c59911734e74d89eed50e2d395ce": {
+      "displayName": "TaskFlow-Web-dev Template",
+      "source": {
+        "path": "TaskFlow-Web-dev.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "635165708055-us-east-1-93e32df3": {
+          "bucketName": "cdk-hnb659fds-assets-635165708055-us-east-1",
+          "objectKey": "99363806c73f5e089460b98bc9e1108f2038c59911734e74d89eed50e2d395ce.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::635165708055:role/cdk-hnb659fds-file-publishing-role-635165708055-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

@@ -1,0 +1,140 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  apiToken  String   @unique @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tasks         Task[]
+  projects      Project[]
+  labels        Label[]
+  sections      Section[]
+  conversations Conversation[]
+
+  @@map("users")
+}
+
+model Project {
+  id         String   @id @default(uuid())
+  name       String
+  color      String   @default("charcoal")
+  order      Int      @default(0)
+  isFavorite Boolean  @default(false)
+  isArchived Boolean  @default(false)
+  parentId   String?
+  userId     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  parent   Project?  @relation("ProjectHierarchy", fields: [parentId], references: [id])
+  children Project[] @relation("ProjectHierarchy")
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sections Section[]
+  tasks    Task[]
+
+  @@index([userId])
+  @@map("projects")
+}
+
+model Section {
+  id        String   @id @default(uuid())
+  name      String
+  order     Int      @default(0)
+  projectId String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@index([projectId])
+  @@index([userId])
+  @@map("sections")
+}
+
+model Label {
+  id        String   @id @default(uuid())
+  name      String
+  color     String   @default("charcoal")
+  order     Int      @default(0)
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks Task[] @relation("TaskLabels")
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("labels")
+}
+
+model Task {
+  id          String    @id @default(uuid())
+  content     String
+  description String?
+  priority    Int       @default(4)
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+  order       Int       @default(0)
+  dueDate     DateTime?
+  projectId   String?
+  sectionId   String?
+  parentId    String?
+  userId      String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  project  Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  section  Section?  @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  parent   Task?     @relation("TaskHierarchy", fields: [parentId], references: [id])
+  children Task[]    @relation("TaskHierarchy")
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  labels   Label[]   @relation("TaskLabels")
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([dueDate])
+  @@map("tasks")
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([userId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String
+  role           String   // 'user' | 'assistant'
+  content        String
+  toolCalls      Json?    // Store tool calls and results
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("messages")
+}

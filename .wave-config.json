@@ -1,15 +1,94 @@
 {
   "version": "1.0.0",
-  "project": "{{PROJECT_NAME}}",
-  "description": "Wave-based task management configuration",
-  "total_waves": 0,
-  "waves": {},
+  "project": "TaskFlow",
+  "description": "AI-powered personal task manager with natural language capabilities",
+  "total_waves": 6,
+  "waves": {
+    "WAVE-001": {
+      "name": "Backend API + Database",
+      "description": "Core API foundation with Express, Prisma, PostgreSQL, and authentication",
+      "status": "ready",
+      "dependencies": [],
+      "tasks": ["TASK-001", "TASK-002", "TASK-003", "TASK-004", "TASK-005", "TASK-006", "TASK-007", "TASK-008", "TASK-009"],
+      "progress": {
+        "total": 9,
+        "completed": 0,
+        "in_progress": 0,
+        "blocked": 8
+      }
+    },
+    "WAVE-002": {
+      "name": "AI Chat + Smart Lists",
+      "description": "NLP parsing with Claude API, chat service with tools, smart list queries",
+      "status": "blocked",
+      "dependencies": ["WAVE-001"],
+      "tasks": ["TASK-010", "TASK-011", "TASK-012", "TASK-013", "TASK-014", "TASK-015", "TASK-016"],
+      "progress": {
+        "total": 7,
+        "completed": 0,
+        "in_progress": 0,
+        "blocked": 7
+      }
+    },
+    "WAVE-003": {
+      "name": "Web App",
+      "description": "React 19 web application with Vite, TailwindCSS, TanStack Router/Query",
+      "status": "blocked",
+      "dependencies": ["WAVE-002"],
+      "tasks": ["TASK-017", "TASK-018", "TASK-019", "TASK-020", "TASK-021", "TASK-022", "TASK-023", "TASK-024", "TASK-025", "TASK-026", "TASK-027", "TASK-028", "TASK-029"],
+      "progress": {
+        "total": 13,
+        "completed": 0,
+        "in_progress": 0,
+        "blocked": 13
+      }
+    },
+    "WAVE-004": {
+      "name": "iOS App",
+      "description": "React Native iOS app with Expo, shared query hooks, push notifications",
+      "status": "blocked",
+      "dependencies": ["WAVE-002"],
+      "tasks": ["TASK-030", "TASK-031", "TASK-032", "TASK-033", "TASK-034", "TASK-035", "TASK-036", "TASK-037", "TASK-038"],
+      "progress": {
+        "total": 9,
+        "completed": 0,
+        "in_progress": 0,
+        "blocked": 9
+      }
+    },
+    "WAVE-005": {
+      "name": "Polish & Submit",
+      "description": "App polish, icons, splash screens, empty states, TestFlight, App Store submission",
+      "status": "blocked",
+      "dependencies": ["WAVE-003", "WAVE-004"],
+      "tasks": ["TASK-039", "TASK-040", "TASK-041", "TASK-042", "TASK-043"],
+      "progress": {
+        "total": 5,
+        "completed": 0,
+        "in_progress": 0,
+        "blocked": 5
+      }
+    },
+    "WAVE-006": {
+      "name": "Enhancements",
+      "description": "Calendar view, Pomodoro, iOS Widgets, Shortcuts, Habits, MCP server, Eisenhower, AI Reports",
+      "status": "blocked",
+      "dependencies": ["WAVE-005"],
+      "tasks": ["TASK-044", "TASK-045", "TASK-046", "TASK-047", "TASK-048", "TASK-049", "TASK-050", "TASK-051"],
+      "progress": {
+        "total": 8,
+        "completed": 0,
+        "in_progress": 0,
+        "blocked": 8
+      }
+    }
+  },
   "current_state": {
-    "active_wave": null,
-    "ready_waves": [],
+    "active_wave": "WAVE-001",
+    "ready_waves": ["WAVE-001"],
     "in_progress_waves": [],
     "completed_waves": [],
-    "blocked_waves": []
+    "blocked_waves": ["WAVE-002", "WAVE-003", "WAVE-004", "WAVE-005", "WAVE-006"]
   },
   "defaults": {
     "task_prefix": "TASK",

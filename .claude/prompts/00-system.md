@@ -1,11 +1,11 @@
-# System Context - {{PROJECT_NAME}}
+# System Context - TaskFlow
 
 ## Session Protocol
 
 ### At Session Start
 
 1. Read `SESSION_START.md` for context from last session
-2. Start session-audit: `mcp__session-audit__start_session(project_path="{{PROJECT_PATH}}")`
+2. Start session-audit: `mcp__session-audit__start_session(project_path="/Users/louis/CodeProjects/Utilities/tasktrek")`
 3. Acknowledge session context before proceeding
 
 ### During Session

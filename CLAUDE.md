@@ -1,14 +1,14 @@
-# {{PROJECT_NAME}}
+# TaskFlow
 
 ## Tech Stack
 
-{{TECH_STACK}}
+TypeScript, Express, Prisma, PostgreSQL, React 19, Vite, TailwindCSS, TanStack Router/Query, React Native, Expo, AWS CDK
 
 ---
 
 ## Session Protocol
 
-**Start:** `mcp__session-audit__start_session(project_path="{{PROJECT_PATH}}")`
+**Start:** `mcp__session-audit__start_session(project_path="/Users/louis/CodeProjects/Utilities/tasktrek")`
 **During:** Log actions/decisions in real-time (every 2-3 tool calls)
 **End:** `mcp__session-audit__end_session(summary="...")`
 
@@ -35,8 +35,8 @@ REQUIRED evidence for ANY completion claim:
 
 ## Testing
 
-- **Run:** `{{TEST_COMMAND}}`
-- **E2E:** `{{E2E_COMMAND}}`
+- **Run:** `npm test`
+- **E2E:** `npm run test:e2e`
 - **Default assumption:** App is broken, not the test
 
 **Full testing rules:** `.claude/rules/testing.md`
@@ -63,10 +63,10 @@ All work requires: Wave ID + Task IDs + progress file
 
 | Action | Command |
 |--------|---------|
-| Test | `{{TEST_COMMAND}}` |
-| E2E | `{{E2E_COMMAND}}` |
-| Lint | `{{LINT_COMMAND}}` |
-| Type Check | `{{TYPECHECK_COMMAND}}` |
+| Test | `npm test` |
+| E2E | `npm run test:e2e` |
+| Lint | `npm run lint` |
+| Type Check | `npm run typecheck` |
 
 ---
 

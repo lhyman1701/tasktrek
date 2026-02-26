@@ -1,0 +1,854 @@
+{
+ "Description": "TaskFlow API Stack (dev)",
+ "Resources": {
+  "ApiRepositoryB8378B43": {
+   "Type": "AWS::ECR::Repository",
+   "Properties": {
+    "EmptyOnDelete": true,
+    "RepositoryName": "taskflow-api-dev"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/ApiRepository/Resource"
+   }
+  },
+  "ApiSg8419ACD7": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "Security group for TaskFlow API",
+    "SecurityGroupEgress": [
+     {
+      "CidrIp": "0.0.0.0/0",
+      "Description": "Allow all outbound traffic by default",
+      "IpProtocol": "-1"
+     }
+    ],
+    "VpcId": {
+     "Fn::ImportValue": "TaskFlow-Database-dev:ExportsOutputRefVpc8378EB38272D6E3A"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/ApiSg/Resource"
+   }
+  },
+  "ApiSgfromTaskFlowApidevApiServiceLBSecurityGroupDC1FAE2230004983C8AF": {
+   "Type": "AWS::EC2::SecurityGroupIngress",
+   "Properties": {
+    "Description": "Load balancer to target",
+    "FromPort": 3000,
+    "GroupId": {
+     "Fn::GetAtt": [
+      "ApiSg8419ACD7",
+      "GroupId"
+     ]
+    },
+    "IpProtocol": "tcp",
+    "SourceSecurityGroupId": {
+     "Fn::GetAtt": [
+      "ApiServiceLBSecurityGroup5C16BEF8",
+      "GroupId"
+     ]
+    },
+    "ToPort": 3000
+   },
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/ApiSg/from TaskFlowApidevApiServiceLBSecurityGroupDC1FAE22:3000"
+   }
+  },
+  "DbIngress": {
+   "Type": "AWS::EC2::SecurityGroupIngress",
+   "Properties": {
+    "Description": "Allow API to connect to database",
+    "FromPort": 5432,
+    "GroupId": {
+     "Fn::ImportValue": "TaskFlow-Database-dev:ExportsOutputFnGetAttDatabaseSgBF3CBC42GroupIdCDE5E064"
+    },
+    "IpProtocol": "tcp",
+    "SourceSecurityGroupId": {
+     "Fn::GetAtt": [
+      "ApiSg8419ACD7",
+      "GroupId"
+     ]
+    },
+    "ToPort": 5432
+   },
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/DbIngress"
+   }
+  },
+  "RedisSgFB48DCCD": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "Security group for TaskFlow Redis",
+    "SecurityGroupEgress": [
+     {
+      "CidrIp": "255.255.255.255/32",
+      "Description": "Disallow all traffic",
+      "FromPort": 252,
+      "IpProtocol": "icmp",
+      "ToPort": 86
+     }
+    ],
+    "VpcId": {
+     "Fn::ImportValue": "TaskFlow-Database-dev:ExportsOutputRefVpc8378EB38272D6E3A"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/RedisSg/Resource"
+   }
+  },
+  "RedisSgfromTaskFlowApidevApiSg4271DB866379295EA847": {
+   "Type": "AWS::EC2::SecurityGroupIngress",
+   "Properties": {
+    "Description": "Allow API to connect to Redis",
+    "FromPort": 6379,
+    "GroupId": {
+     "Fn::GetAtt": [
+      "RedisSgFB48DCCD",
+      "GroupId"
+     ]
+    },
+    "IpProtocol": "tcp",
+    "SourceSecurityGroupId": {
+     "Fn::GetAtt": [
+      "ApiSg8419ACD7",
+      "GroupId"
+     ]
+    },
+    "ToPort": 6379
+   },
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/RedisSg/from TaskFlowApidevApiSg4271DB86:6379"
+   }
+  },
+  "RedisSubnetGroup": {
+   "Type": "AWS::ElastiCache::SubnetGroup",
+   "Properties": {
+    "CacheSubnetGroupName": "taskflow-redis-dev",
+    "Description": "Subnet group for TaskFlow Redis",
+    "SubnetIds": [
+     {
+      "Fn::ImportValue": "TaskFlow-Database-dev:ExportsOutputRefVpcIsolatedSubnet1SubnetE48C57379FE391D3"
+     },
+     {
+      "Fn::ImportValue": "TaskFlow-Database-dev:ExportsOutputRefVpcIsolatedSubnet2Subnet16364B914643ED68"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/RedisSubnetGroup"
+   }
+  },
+  "Redis": {
+   "Type": "AWS::ElastiCache::CacheCluster",
+   "Properties": {
+    "CacheNodeType": "cache.t3.micro",
+    "CacheSubnetGroupName": "taskflow-redis-dev",
+    "ClusterName": "taskflow-dev",
+    "Engine": "redis",
+    "EngineVersion": "7.0",
+    "NumCacheNodes": 1,
+    "VpcSecurityGroupIds": [
+     {
+      "Fn::GetAtt": [
+       "RedisSgFB48DCCD",
+       "GroupId"
+      ]
+     }
+    ]
+   },
+   "DependsOn": [
+    "RedisSubnetGroup"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/Redis"
+   }
+  },
+  "ClusterEB0386A7": {
+   "Type": "AWS::ECS::Cluster",
+   "Properties": {
+    "ClusterName": "taskflow-dev"
+   },
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/Cluster/Resource"
+   }
+  },
+  "ApiServiceLB08B891CD": {
+   "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+   "Properties": {
+    "LoadBalancerAttributes": [
+     {
+      "Key": "deletion_protection.enabled",
+      "Value": "false"
+     }
+    ],
+    "Scheme": "internet-facing",
+    "SecurityGroups": [
+     {
+      "Fn::GetAtt": [
+       "ApiServiceLBSecurityGroup5C16BEF8",
+       "GroupId"
+      ]
+     }
+    ],
+    "Subnets": [
+     {
+      "Fn::ImportValue": "TaskFlow-Database-dev:ExportsOutputRefVpcPublicSubnet1Subnet5C2D37C4FFA2B456"
+     },
+     {
+      "Fn::ImportValue": "TaskFlow-Database-dev:ExportsOutputRefVpcPublicSubnet2Subnet691E08A351552740"
+     }
+    ],
+    "Type": "application"
+   },
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/ApiService/LB/Resource"
+   }
+  },
+  "ApiServiceLBSecurityGroup5C16BEF8": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "Automatically created Security Group for ELB TaskFlowApidevApiServiceLB30833898",
+    "SecurityGroupIngress": [
+     {
+      "CidrIp": "0.0.0.0/0",
+      "Description": "Allow from anyone on port 80",
+      "FromPort": 80,
+      "IpProtocol": "tcp",
+      "ToPort": 80
+     }
+    ],
+    "VpcId": {
+     "Fn::ImportValue": "TaskFlow-Database-dev:ExportsOutputRefVpc8378EB38272D6E3A"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/ApiService/LB/SecurityGroup/Resource"
+   }
+  },
+  "ApiServiceLBSecurityGrouptoTaskFlowApidevApiSg4271DB863000144AB7C3": {
+   "Type": "AWS::EC2::SecurityGroupEgress",
+   "Properties": {
+    "Description": "Load balancer to target",
+    "DestinationSecurityGroupId": {
+     "Fn::GetAtt": [
+      "ApiSg8419ACD7",
+      "GroupId"
+     ]
+    },
+    "FromPort": 3000,
+    "GroupId": {
+     "Fn::GetAtt": [
+      "ApiServiceLBSecurityGroup5C16BEF8",
+      "GroupId"
+     ]
+    },
+    "IpProtocol": "tcp",
+    "ToPort": 3000
+   },
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/ApiService/LB/SecurityGroup/to TaskFlowApidevApiSg4271DB86:3000"
+   }
+  },
+  "ApiServiceLBPublicListener1394DF3E": {
+   "Type": "AWS::ElasticLoadBalancingV2::Listener",
+   "Properties": {
+    "DefaultActions": [
+     {
+      "TargetGroupArn": {
+       "Ref": "ApiServiceLBPublicListenerECSGroup14A87FE9"
+      },
+      "Type": "forward"
+     }
+    ],
+    "LoadBalancerArn": {
+     "Ref": "ApiServiceLB08B891CD"
+    },
+    "Port": 80,
+    "Protocol": "HTTP"
+   },
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/ApiService/LB/PublicListener/Resource"
+   }
+  },
+  "ApiServiceLBPublicListenerECSGroup14A87FE9": {
+   "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+   "Properties": {
+    "HealthCheckIntervalSeconds": 30,
+    "HealthCheckPath": "/api/health",
+    "HealthCheckTimeoutSeconds": 5,
+    "HealthyThresholdCount": 2,
+    "Matcher": {
+     "HttpCode": "200"
+    },
+    "Port": 80,
+    "Protocol": "HTTP",
+    "TargetGroupAttributes": [
+     {
+      "Key": "stickiness.enabled",
+      "Value": "false"
+     }
+    ],
+    "TargetType": "ip",
+    "UnhealthyThresholdCount": 3,
+    "VpcId": {
+     "Fn::ImportValue": "TaskFlow-Database-dev:ExportsOutputRefVpc8378EB38272D6E3A"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/ApiService/LB/PublicListener/ECSGroup/Resource"
+   }
+  },
+  "ApiServiceTaskDefTaskRole1014CB34": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/ApiService/TaskDef/TaskRole/Resource"
+   }
+  },
+  "ApiServiceTaskDefDF3191FB": {
+   "Type": "AWS::ECS::TaskDefinition",
+   "Properties": {
+    "ContainerDefinitions": [
+     {
+      "Environment": [
+       {
+        "Name": "NODE_ENV",
+        "Value": "development"
+       },
+       {
+        "Name": "PORT",
+        "Value": "3000"
+       },
+       {
+        "Name": "DATABASE_HOST",
+        "Value": {
+         "Fn::ImportValue": "TaskFlow-Database-dev:ExportsOutputFnGetAttDatabaseB269D8BBEndpointAddressA4DBD059"
+        }
+       },
+       {
+        "Name": "DATABASE_PORT",
+        "Value": "5432"
+       },
+       {
+        "Name": "DATABASE_NAME",
+        "Value": "taskflow"
+       },
+       {
+        "Name": "REDIS_HOST",
+        "Value": {
+         "Fn::GetAtt": [
+          "Redis",
+          "RedisEndpoint.Address"
+         ]
+        }
+       },
+       {
+        "Name": "REDIS_PORT",
+        "Value": {
+         "Fn::GetAtt": [
+          "Redis",
+          "RedisEndpoint.Port"
+         ]
+        }
+       }
+      ],
+      "Essential": true,
+      "Image": {
+       "Fn::Join": [
+        "",
+        [
+         {
+          "Fn::Select": [
+           4,
+           {
+            "Fn::Split": [
+             ":",
+             {
+              "Fn::GetAtt": [
+               "ApiRepositoryB8378B43",
+               "Arn"
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         ".dkr.ecr.",
+         {
+          "Fn::Select": [
+           3,
+           {
+            "Fn::Split": [
+             ":",
+             {
+              "Fn::GetAtt": [
+               "ApiRepositoryB8378B43",
+               "Arn"
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         ".",
+         {
+          "Ref": "AWS::URLSuffix"
+         },
+         "/",
+         {
+          "Ref": "ApiRepositoryB8378B43"
+         },
+         ":latest"
+        ]
+       ]
+      },
+      "LogConfiguration": {
+       "LogDriver": "awslogs",
+       "Options": {
+        "awslogs-group": {
+         "Ref": "ApiServiceTaskDefwebLogGroup57352A09"
+        },
+        "awslogs-stream-prefix": "taskflow-api",
+        "awslogs-region": "us-east-1"
+       }
+      },
+      "Name": "web",
+      "PortMappings": [
+       {
+        "ContainerPort": 3000,
+        "Protocol": "tcp"
+       }
+      ],
+      "Secrets": [
+       {
+        "Name": "DATABASE_USERNAME",
+        "ValueFrom": {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::ImportValue": "TaskFlow-Database-dev:ExportsOutputRefDatabaseSecret86DBB7B353068790"
+           },
+           ":username::"
+          ]
+         ]
+        }
+       },
+       {
+        "Name": "DATABASE_PASSWORD",
+        "ValueFrom": {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::ImportValue": "TaskFlow-Database-dev:ExportsOutputRefDatabaseSecret86DBB7B353068790"
+           },
+           ":password::"
+          ]
+         ]
+        }
+       },
+       {
+        "Name": "ANTHROPIC_API_KEY",
+        "ValueFrom": {
+         "Fn::Join": [
+          "",
+          [
+           "arn:",
+           {
+            "Ref": "AWS::Partition"
+           },
+           ":secretsmanager:us-east-1:635165708055:secret:taskflow/dev/anthropic-api-key"
+          ]
+         ]
+        }
+       }
+      ]
+     }
+    ],
+    "Cpu": "256",
+    "ExecutionRoleArn": {
+     "Fn::GetAtt": [
+      "ApiServiceTaskDefExecutionRole43B90DD6",
+      "Arn"
+     ]
+    },
+    "Family": "TaskFlowApidevApiServiceTaskDef85809EF6",
+    "Memory": "512",
+    "NetworkMode": "awsvpc",
+    "RequiresCompatibilities": [
+     "FARGATE"
+    ],
+    "TaskRoleArn": {
+     "Fn::GetAtt": [
+      "ApiServiceTaskDefTaskRole1014CB34",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/ApiService/TaskDef/Resource"
+   }
+  },
+  "ApiServiceTaskDefwebLogGroup57352A09": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "RetentionInDays": 7
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/ApiService/TaskDef/web/LogGroup/Resource"
+   }
+  },
+  "ApiServiceTaskDefExecutionRole43B90DD6": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/ApiService/TaskDef/ExecutionRole/Resource"
+   }
+  },
+  "ApiServiceTaskDefExecutionRoleDefaultPolicyDCB48050": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "ApiRepositoryB8378B43",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": "ecr:GetAuthorizationToken",
+       "Effect": "Allow",
+       "Resource": "*"
+      },
+      {
+       "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "ApiServiceTaskDefwebLogGroup57352A09",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::ImportValue": "TaskFlow-Database-dev:ExportsOutputRefDatabaseSecret86DBB7B353068790"
+       }
+      },
+      {
+       "Action": [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:",
+          {
+           "Ref": "AWS::Partition"
+          },
+          ":secretsmanager:us-east-1:635165708055:secret:taskflow/dev/anthropic-api-key-??????"
+         ]
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ApiServiceTaskDefExecutionRoleDefaultPolicyDCB48050",
+    "Roles": [
+     {
+      "Ref": "ApiServiceTaskDefExecutionRole43B90DD6"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/ApiService/TaskDef/ExecutionRole/DefaultPolicy/Resource"
+   }
+  },
+  "ApiService199661B5": {
+   "Type": "AWS::ECS::Service",
+   "Properties": {
+    "Cluster": {
+     "Ref": "ClusterEB0386A7"
+    },
+    "DeploymentConfiguration": {
+     "Alarms": {
+      "AlarmNames": [],
+      "Enable": false,
+      "Rollback": false
+     },
+     "MaximumPercent": 200,
+     "MinimumHealthyPercent": 50
+    },
+    "DesiredCount": 1,
+    "EnableECSManagedTags": false,
+    "HealthCheckGracePeriodSeconds": 60,
+    "LaunchType": "FARGATE",
+    "LoadBalancers": [
+     {
+      "ContainerName": "web",
+      "ContainerPort": 3000,
+      "TargetGroupArn": {
+       "Ref": "ApiServiceLBPublicListenerECSGroup14A87FE9"
+      }
+     }
+    ],
+    "NetworkConfiguration": {
+     "AwsvpcConfiguration": {
+      "AssignPublicIp": "DISABLED",
+      "SecurityGroups": [
+       {
+        "Fn::GetAtt": [
+         "ApiSg8419ACD7",
+         "GroupId"
+        ]
+       }
+      ],
+      "Subnets": [
+       {
+        "Fn::ImportValue": "TaskFlow-Database-dev:ExportsOutputRefVpcPrivateSubnet1Subnet536B997AFD4CC940"
+       },
+       {
+        "Fn::ImportValue": "TaskFlow-Database-dev:ExportsOutputRefVpcPrivateSubnet2Subnet3788AAA1380949A3"
+       }
+      ]
+     }
+    },
+    "ServiceName": "taskflow-api-dev",
+    "TaskDefinition": {
+     "Ref": "ApiServiceTaskDefDF3191FB"
+    }
+   },
+   "DependsOn": [
+    "ApiServiceLBPublicListenerECSGroup14A87FE9",
+    "ApiServiceLBPublicListener1394DF3E",
+    "ApiServiceTaskDefTaskRole1014CB34"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/ApiService/Service/Service"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/31R2W7CMBD8Ft6NSyN+oKWHKiG1Crwj4yxhwawjH6lQlH/vxgk0pVWfPDs7s5czmc1ncjZRn36qi+PU4FY2q6D0UTC1aUA72eRQWY/BurNY7Og7agXojOWgo8NwfnU2Vp3if+KNSgfe/+KfE801jfIBtdJ7kE0niluCcK216BILE30A1w3gWdRHKTvAF+VKFWCt/PEJdkgY0FInuGUsBYUEbsQN3hW4GjX0cyaY2m0qFbgDeflQVYbn7DxLq4pHZRRpKG7swzqGFdukQCprvtrf7rTEj3isQ96NBs0Fj/Jr7jy61ChsBaoTf6Q1aZ/0flj2pR/tUSuMLfmaS1teS1xw24ocvI2uv8d7DFUMrSBbgDz4uzqby7m8nxw84tRFCngCmffvF7ghAfdiAgAA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "TaskFlow-Api-dev/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "ApiServiceLoadBalancerDNSBF9EB7FC": {
+   "Value": {
+    "Fn::GetAtt": [
+     "ApiServiceLB08B891CD",
+     "DNSName"
+    ]
+   }
+  },
+  "ApiServiceServiceURL2EB28DB2": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "http://",
+      {
+       "Fn::GetAtt": [
+        "ApiServiceLB08B891CD",
+        "DNSName"
+       ]
+      }
+     ]
+    ]
+   }
+  },
+  "ApiUrl": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "http://",
+      {
+       "Fn::GetAtt": [
+        "ApiServiceLB08B891CD",
+        "DNSName"
+       ]
+      }
+     ]
+    ]
+   },
+   "Export": {
+    "Name": "TaskFlow-dev-ApiUrl"
+   }
+  },
+  "EcrRepositoryUri": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      {
+       "Fn::Select": [
+        4,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "ApiRepositoryB8378B43",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".dkr.ecr.",
+      {
+       "Fn::Select": [
+        3,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "ApiRepositoryB8378B43",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/",
+      {
+       "Ref": "ApiRepositoryB8378B43"
+      }
+     ]
+    ]
+   },
+   "Export": {
+    "Name": "TaskFlow-dev-EcrRepositoryUri"
+   }
+  },
+  "ClusterName": {
+   "Value": {
+    "Ref": "ClusterEB0386A7"
+   },
+   "Export": {
+    "Name": "TaskFlow-dev-ClusterName"
+   }
+  },
+  "ServiceName": {
+   "Value": {
+    "Fn::GetAtt": [
+     "ApiService199661B5",
+     "Name"
+    ]
+   },
+   "Export": {
+    "Name": "TaskFlow-dev-ServiceName"
+   }
+  },
+  "ExportsOutputFnGetAttApiServiceLB08B891CDDNSNameCAD58131": {
+   "Value": {
+    "Fn::GetAtt": [
+     "ApiServiceLB08B891CD",
+     "DNSName"
+    ]
+   },
+   "Export": {
+    "Name": "TaskFlow-Api-dev:ExportsOutputFnGetAttApiServiceLB08B891CDDNSNameCAD58131"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

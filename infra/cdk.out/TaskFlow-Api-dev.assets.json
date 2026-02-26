@@ -1,0 +1,21 @@
+{
+  "version": "50.0.0",
+  "files": {
+    "333694c4dad68a28b7fd6e919df9e25a2175caa0a1bd9932e30c3c481d310f30": {
+      "displayName": "TaskFlow-Api-dev Template",
+      "source": {
+        "path": "TaskFlow-Api-dev.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "635165708055-us-east-1-cd978d3e": {
+          "bucketName": "cdk-hnb659fds-assets-635165708055-us-east-1",
+          "objectKey": "333694c4dad68a28b7fd6e919df9e25a2175caa0a1bd9932e30c3c481d310f30.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::635165708055:role/cdk-hnb659fds-file-publishing-role-635165708055-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}
