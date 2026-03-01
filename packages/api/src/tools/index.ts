@@ -131,6 +131,7 @@ async function updateTask(userId: string, input: Record<string, unknown>): Promi
   const taskId = input.taskId as string;
   const content = input.content as string | undefined;
   const dueDate = input.dueDate as string | undefined;
+  const dueTime = input.dueTime as string | undefined;
   const priority = input.priority as TaskPriority | undefined;
 
   const task = await prisma.task.findFirst({
@@ -145,7 +146,7 @@ async function updateTask(userId: string, input: Record<string, unknown>): Promi
     where: { id: taskId },
     data: {
       content,
-      dueDate: dueDate ? new Date(dueDate) : undefined,
+      dueDate: dueDate ? combineDateAndTime(dueDate, dueTime) : undefined,
       priority: priority ? priorityToInt(priority) : undefined
     }
   });

@@ -1,5 +1,4 @@
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
-import { TanStackRouterDevtools } from '@tanstack/router-devtools';
 import type { QueryClient } from '@tanstack/react-query';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { CommandPalette } from '@/components/ui/CommandPalette';
@@ -23,7 +22,6 @@ function RootComponent() {
       </AppLayout>
       <CommandPalette />
       <ProjectModal />
-      {import.meta.env.DEV && <TanStackRouterDevtools position="bottom-right" />}
     </>
   );
 }

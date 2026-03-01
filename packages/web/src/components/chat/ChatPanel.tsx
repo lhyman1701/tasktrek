@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { X, Send, Loader2, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
-import { useMutation } from '@tanstack/react-query';
+import { useState, useRef, useEffect, KeyboardEvent, useCallback } from 'react';
+import { X, Send, Loader2, Sparkles, CheckCircle2, AlertCircle, Wrench } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import ReactMarkdown from 'react-markdown';
 import { api, ChatMessage, ChatAction } from '@/lib/api';
 import { useUIStore } from '@/stores/uiStore';
@@ -8,41 +8,90 @@ import { cn } from '@/lib/utils';
 
 export function ChatPanel() {
   const { toggleChat } = useUIStore();
+  const queryClient = useQueryClient();
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [actions, setActions] = useState<ChatAction[]>([]);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingContent, setStreamingContent] = useState('');
+  const [currentTool, setCurrentTool] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const streamingContentRef = useRef('');
 
-  const chat = useMutation({
-    mutationFn: ({ message, history }: { message: string; history: ChatMessage[] }) =>
-      api.chat.send(message, history),
-    onSuccess: (data) => {
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: data.response }
-      ]);
-      setActions(data.actions);
-    }
-  });
-
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, streamingContent, scrollToBottom]);
 
-  const handleSend = () => {
-    if (!input.trim() || chat.isPending) return;
+  const handleStream = useCallback(async (message: string, history: ChatMessage[]) => {
+    setIsStreaming(true);
+    setStreamingContent('');
+    streamingContentRef.current = '';
+    setCurrentTool(null);
+    setActions([]);
+
+    try {
+      await api.chat.stream(message, history, {
+        onText: (text) => {
+          streamingContentRef.current += text;
+          setStreamingContent(streamingContentRef.current);
+        },
+        onToolStart: (tool) => {
+          setCurrentTool(tool);
+        },
+        onToolEnd: (tool, result) => {
+          setCurrentTool(null);
+          setActions((prev) => [...prev, { tool, input: {}, result }]);
+        },
+        onDone: (finalActions) => {
+          const finalContent = streamingContentRef.current || 'Done.';
+          setMessages((prev) => [
+            ...prev,
+            { role: 'assistant', content: finalContent }
+          ]);
+          setStreamingContent('');
+          streamingContentRef.current = '';
+          setActions(finalActions);
+          setIsStreaming(false);
+
+          // Invalidate queries if any actions were performed
+          if (finalActions.length > 0) {
+            queryClient.invalidateQueries({ queryKey: ['tasks'] });
+            queryClient.invalidateQueries({ queryKey: ['smart-lists'] });
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+          }
+        },
+        onError: (error) => {
+          setMessages((prev) => [
+            ...prev,
+            { role: 'assistant', content: `Error: ${error}` }
+          ]);
+          setStreamingContent('');
+          streamingContentRef.current = '';
+          setIsStreaming(false);
+        }
+      });
+    } catch {
+      setStreamingContent('');
+      streamingContentRef.current = '';
+      setIsStreaming(false);
+    }
+  }, []);
+
+  const handleSend = useCallback(() => {
+    if (!input.trim() || isStreaming) return;
 
     const userMessage: ChatMessage = { role: 'user', content: input };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    const currentHistory = messages;
+
+    setMessages((prev) => [...prev, userMessage]);
     setInput('');
 
-    chat.mutate({ message: input, history: messages });
-  };
+    handleStream(input, currentHistory);
+  }, [input, isStreaming, messages, handleStream]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -69,7 +118,7 @@ export function ChatPanel() {
 
       {/* Messages */}
       <div className="flex-1 overflow-auto p-4 space-y-4">
-        {messages.length === 0 && (
+        {messages.length === 0 && !isStreaming && (
           <div className="text-center text-surface-500 py-8">
             <Sparkles className="h-12 w-12 mx-auto mb-4 text-amber-500" />
             <p className="font-medium">Ask me anything!</p>
@@ -127,8 +176,28 @@ export function ChatPanel() {
           </div>
         ))}
 
+        {/* Streaming response */}
+        {isStreaming && (
+          <div className="flex justify-start">
+            <div className="max-w-[80%] rounded-lg px-4 py-2 bg-surface-100 dark:bg-surface-800">
+              {streamingContent ? (
+                <div className="text-sm prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0">
+                  <ReactMarkdown>{streamingContent}</ReactMarkdown>
+                </div>
+              ) : currentTool ? (
+                <div className="flex items-center gap-2 text-sm text-surface-500">
+                  <Wrench className="h-4 w-4 animate-pulse" />
+                  <span>Running {currentTool}...</span>
+                </div>
+              ) : (
+                <Loader2 className="h-5 w-5 animate-spin text-primary-500" />
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
-        {actions.length > 0 && (
+        {actions.length > 0 && !isStreaming && (
           <div className="space-y-2">
             {actions.map((action, index) => (
               <div
@@ -152,14 +221,6 @@ export function ChatPanel() {
           </div>
         )}
 
-        {chat.isPending && (
-          <div className="flex justify-start">
-            <div className="bg-surface-100 dark:bg-surface-800 rounded-lg px-4 py-2">
-              <Loader2 className="h-5 w-5 animate-spin text-primary-500" />
-            </div>
-          </div>
-        )}
-
         <div ref={messagesEndRef} />
       </div>
 
@@ -173,14 +234,14 @@ export function ChatPanel() {
             placeholder="Ask me anything..."
             className="input flex-1 min-h-[44px] max-h-[120px] resize-none"
             rows={1}
-            disabled={chat.isPending}
+            disabled={isStreaming}
           />
           <button
             onClick={handleSend}
-            disabled={!input.trim() || chat.isPending}
+            disabled={!input.trim() || isStreaming}
             className="btn-primary px-3"
           >
-            {chat.isPending ? (
+            {isStreaming ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
               <Send className="h-5 w-5" />

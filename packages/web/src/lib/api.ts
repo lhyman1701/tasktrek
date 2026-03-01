@@ -137,6 +137,92 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ message, history })
     }, true),
+    stream: async (
+      message: string,
+      history: ChatMessage[],
+      callbacks: {
+        onText: (text: string) => void;
+        onToolStart?: (tool: string) => void;
+        onToolEnd?: (tool: string, result: { success: boolean; data?: unknown; error?: string }) => void;
+        onDone?: (actions: ChatAction[]) => void;
+        onError?: (error: string) => void;
+      }
+    ) => {
+      const token = getToken();
+      const anthropicKey = getAnthropicKey();
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        'X-Timezone': getTimezone()
+      };
+
+      if (token) {
+        (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+      }
+      if (anthropicKey) {
+        (headers as Record<string, string>)['X-Anthropic-Key'] = anthropicKey;
+      }
+
+      const response = await fetch(`${API_BASE}/chat/stream`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ message, history })
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: 'Streaming failed' }));
+        callbacks.onError?.(error.message || `HTTP ${response.status}`);
+        return;
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        callbacks.onError?.('No response body');
+        return;
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const event = JSON.parse(line.slice(6)) as StreamEvent;
+
+              switch (event.type) {
+                case 'text':
+                  if (event.text) callbacks.onText(event.text);
+                  break;
+                case 'tool_start':
+                  if (event.tool) callbacks.onToolStart?.(event.tool);
+                  break;
+                case 'tool_end':
+                  if (event.tool && event.result) {
+                    callbacks.onToolEnd?.(event.tool, event.result);
+                  }
+                  break;
+                case 'done':
+                  callbacks.onDone?.(event.actions || []);
+                  break;
+                case 'error':
+                  callbacks.onError?.(event.error || 'Unknown error');
+                  break;
+              }
+            } catch {
+              // Ignore JSON parse errors
+            }
+          }
+        }
+      }
+    },
     conversations: () => request<Conversation[]>('/chat/conversations'),
     getConversation: (id: string) => request<ConversationWithMessages>(`/chat/conversations/${id}`),
     sendPersistent: (message: string, conversationId?: string) =>
@@ -293,4 +379,14 @@ export interface PersistentChatResponse {
   conversationId: string;
   response: string;
   actions: ChatAction[];
+}
+
+export interface StreamEvent {
+  type: 'text' | 'tool_start' | 'tool_end' | 'done' | 'error';
+  text?: string;
+  tool?: string;
+  input?: Record<string, unknown>;
+  result?: { success: boolean; data?: unknown; error?: string };
+  error?: string;
+  actions?: ChatAction[];
 }

@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { validate, validateBody, validateParams } from '../middleware/validate.js';
-import { chat, getUserContext } from '../services/chatService.js';
+import { chat, getUserContext, streamChat, StreamEvent } from '../services/chatService.js';
 import { ChatMessage } from '../types/nlp.js';
 import { prisma } from '../db/client.js';
 import { AppError } from '../middleware/errorHandler.js';
@@ -43,6 +43,46 @@ router.post('/',
     const response = await chat(context, message, history, anthropicApiKey, timezone);
 
     res.json(response);
+  })
+);
+
+// POST /api/chat/stream - Streaming chat with Server-Sent Events
+router.post('/stream',
+  validateBody(SimpleChatSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const anthropicApiKey = req.headers['x-anthropic-key'] as string | undefined;
+    const timezone = req.headers['x-timezone'] as string || 'UTC';
+    const { message, history } = req.body as { message: string; history: ChatMessage[] };
+
+    // Set up SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
+    res.flushHeaders();
+
+    const context = await getUserContext(userId);
+    const stream = streamChat(context, message, history, anthropicApiKey, timezone);
+
+    try {
+      for await (const event of stream) {
+        res.write(`data: ${JSON.stringify(event)}\n\n`);
+
+        // Flush the response to send immediately
+        if (typeof (res as any).flush === 'function') {
+          (res as any).flush();
+        }
+      }
+    } catch (error) {
+      const errorEvent: StreamEvent = {
+        type: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+      res.write(`data: ${JSON.stringify(errorEvent)}\n\n`);
+    }
+
+    res.end();
   })
 );
 

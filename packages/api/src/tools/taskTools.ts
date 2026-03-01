@@ -47,7 +47,8 @@ export const taskTools: Tool[] = [
       properties: {
         taskId: { type: 'string', description: 'The task UUID to update' },
         content: { type: 'string', description: 'New task content' },
-        dueDate: { type: 'string', description: 'New due date in ISO format' },
+        dueDate: { type: 'string', description: 'New due date in ISO format (YYYY-MM-DD)' },
+        dueTime: { type: 'string', description: 'New due time in HH:mm format' },
         priority: { type: 'string', enum: ['p1', 'p2', 'p3', 'p4'], description: 'New priority' }
       },
       required: ['taskId']
